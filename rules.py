@@ -118,7 +118,7 @@ def rule2_histogram(target, input_path):
 
 
 def rule3_template(target, input_path):
-    """Template matching. Detects when the suspect is contained in the original.
+    """Template matching: Detects when the suspect is contained in the original.
 
     cv2.matchTemplate needs the template (suspect) smaller than the target
     (original); on rotated/resized suspects this rule degrades fast. Fixing

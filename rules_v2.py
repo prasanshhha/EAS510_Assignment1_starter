@@ -126,10 +126,7 @@ def rule4_edges(target, input_path):
       metric = inlier_ratio * count_score
 
       out["metric"] = round(float(metric), 3)
-      out["note"] = (
-        f"ORB inliers {inliers}/{len(good)}, "
-        f"metric {metric:.2f}"
-      )
+      out["note"] = f"Match Score {metric:.2f}"
 
       if metric >= RULE4_TSH:
         out["fired"] = True

@@ -85,3 +85,29 @@ restart never touches GitHub.
 ## License
 
 Apache 2.0. See `LICENSE`.
+
+## Observed weakness in V1: what failed and why
+V1 used metadata, histogram, and template matching, but struggled with combined transformations such as cropping, resizing, and compression. 
+For example, `original_08__crop_keep60__bright__compress__q55__v2.jpg` was rejected with a score of 38/100 because Rules 1 and 2 failed to provide 
+sufficient evidence. Rule 3 assumes the suspect image remains at approximately the same scale and alignment as the original. It fired on all 30 
+images of variants v1, v2, and v5, but only 2/30 images of v3, v4, and v6. When Rule 3 contributed zero, Rules 1 and 2 could contribute at most 
+60 points combined, leaving 27/30 images scoring 43–55/100, around the 50-point cutoff. V1 correctly identified 43/60 hard images, incorrectly 
+matched four, and rejected 13. For example, `original_04__resize_scale85__compress__q60__v3.jpg` was incorrectly matched to original_03 with a score of 52/100.
+
+## Design decision for V2: what Rule 4 is and why you chose it
+V2 adds Rule 4 using ORB keypoint matching and RANSAC to identify geometrically consistent features between images. It detects up to 1,500 keypoints per image, 
+applies the 0.75 ratio test to descriptor matches, and uses RANSAC to estimate a geometric transformation. The metric is inlier_ratio × min(inliers / 12, 1), 
+with a firing threshold of 0.5. For example, `original_00__resize_scale114__compress__q45__v3.jpg` produced 722 inliers from 732 good matches, despite Rule 3 scoring 
+only 0.44. The weights are 15, 25, 30, and 30 for Rules 1–4, respectively. Rule 1's weight was reduced because it did not fire on 20 modified images involving 25% and 50% crops.
+
+## Effect of the change: accuracy before/after on easy vs hard
+On the hard set of 60 images, V1 correctly identified 43, incorrectly matched four, and rejected 13. V2 correctly identified 56, made no incorrect 
+matches, and rejected four, increasing the correct identification rate from 71.7% to 93.3%. Across the modified and hard sets, correct identifications 
+increased from 102/120 to 110/120. V2 correctly matched 54/60 modified images and rejected all 15 random images. Rule 4 fired on 59/60 hard images, 
+49/60 modified images, and 0/15 random images; firing indicates that the rule met its own threshold, not necessarily that the final identification was correct.
+
+## Trade-offs: what new costs or risks did Rule 4 introduce
+ORB and RANSAC add computation compared with simple metadata checks. Matching can also fail when images have few distinctive features or undergo severe cropping 
+and compression. In the tests, Rule 4 did not fire on any of the ten 25% crop images, which had only 4–8 inliers. Reducing Rule 3's weight from 40 to 30 also 
+removed some score margin, causing five crops to be rejected, including `modified_00_crop_25pct.jpg`. This illustrates the trade-off between improving identification 
+of transformed images and preserving enough score for difficult genuine matches.

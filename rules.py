@@ -38,7 +38,7 @@ RULE1_TSH = 0.6
 RULE2_TSH = 0.5
 RULE3_TSH = 0.65  # original: 0.4
 SIZE_TOL = 2      # tolerance for size 
-DEBUG = False 
+DEBUG = True 
 
 @lru_cache(maxsize=256)
 def _arr(path):
